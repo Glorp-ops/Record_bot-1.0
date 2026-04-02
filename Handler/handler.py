@@ -52,7 +52,7 @@ async def command_start_handler(message: Message,session) -> None:
         await message.answer(f"Здравствуйте,{tg_id.user_name}! \n"
                              "Что вы сегодня хотите сделать?", reply_markup=keyboard_menu())
 
-    if message.from_user.id == 1822405102:
+    if message.from_user.id == 1822405102 and tg_id != None:
         await message.answer("Здравствуйте, админ! Вот ваши команды:\n"
                              "/all - посмотреть всех пользователей\n"
                              "/send_message - отправить сообщения всем пользователям\n"
@@ -366,7 +366,11 @@ async def reg_name(message: Message, state: FSMContext, session):
 
         await message.answer('Спасибо за регестрацию, админ')
 
-        await message.answer("Что вы сегодня хотите сделать?", reply_markup=keyboard_menu())
+        await message.answer("Вот ваши команды:\n"
+                             "/all - посмотреть всех пользователей\n"
+                             "/send_message - отправить сообщения всем пользователям\n"
+                             "/edit_lessons - редактировать уроки\n"
+                             "Что вы сегодня хотите сделать?", reply_markup=keyboard_menu())
 
     await session.commit()
 
