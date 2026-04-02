@@ -65,7 +65,7 @@ async def cmd_end(message: Message, state: FSMContext):
 
     await state.clear()
 
-    await message.answer('Процесс закончен')
+    await message.answer('Процесс закончен',reply_markup=ReplyKeyboardRemove())
 
 
 
