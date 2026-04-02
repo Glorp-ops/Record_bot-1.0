@@ -1,52 +1,42 @@
-from aiogram.types import DateTime
-from sqlalchemy import BigInteger, String, Integer, ForeignKey, CheckConstraint, Time
-from sqlalchemy.orm import mapped_column,DeclarativeBase,Mapped,relationship,Session
-from sqlalchemy.ext.asyncio import AsyncAttrs, async_sessionmaker,create_async_engine
+from datetime import date,time
+from sqlalchemy import BigInteger, String, ForeignKey, DateTime, Date, Time, UniqueConstraint
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-engine = create_async_engine(url = 'postgresql+asyncpg://postgres:admin@localhost/postgres')
+from DataBase.database import Base, engine
 
-async_session = async_sessionmaker(engine)
-
-class Base(AsyncAttrs, DeclarativeBase):
-    pass
 
 class User(Base):
+    __tablename__='users'
 
-    __tablename__ = 'users'
+    id:Mapped[int]=mapped_column(primary_key=True)
+    tg_id:Mapped[int]=mapped_column(BigInteger,unique=True)
+    user_name:Mapped[str] = mapped_column(String(100))
+    role:Mapped[str]=mapped_column(String(20),default='user')
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    username: Mapped[str] = mapped_column(String(50),nullable=False)
-    name: Mapped[str] = mapped_column(nullable=False)
-    tg_id = mapped_column(BigInteger, nullable=False)
-    role: Mapped[str]  = mapped_column(nullable=False)
-    reg_user: Mapped["Registration_study"] = relationship(back_populates='user')
+    records: Mapped[list["Record"]] = relationship(back_populates="user")
 
 class Lesson(Base):
+    __tablename__='lessons'
 
-    __tablename__ = 'lessons'
+    id:Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(100),unique=True)
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(30))
-    datetime: Mapped[str] = mapped_column(String(100))
-    time_lesson:Mapped[str] = mapped_column(String(20))
+    records:Mapped[list["Record"]]=relationship(back_populates="lesson")
 
-    reg_lesson: Mapped["Registration_study"] = relationship(back_populates="lesson")
-
-class Registration_study(Base):
-
-    __tablename__ = 'registrations'
+class Record(Base):
+    __tablename__='records'
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey('users.id',onupdate='CASCADE', ondelete='CASCADE'))
-    lesson_id: Mapped[int] = mapped_column(ForeignKey('lessons.id',onupdate='CASCADE', ondelete='CASCADE'))
+    user_id: Mapped[int] = mapped_column(ForeignKey('users.id'))
+    lesson_id: Mapped[int] = mapped_column(ForeignKey('lessons.id', ondelete='SET DEFAULT', onupdate ='SET DEFAULT'), default = 'урок удален или изменен')
+    date: Mapped[date] = mapped_column(Date)
+    time: Mapped[time] = mapped_column(Time)
 
-    lesson: Mapped['Lesson'] = relationship(back_populates='reg_lesson')
-    user: Mapped["User"] = relationship(back_populates='reg_user')
+    user:Mapped[User]=relationship(back_populates="records")
+    lesson:Mapped[Lesson]=relationship(back_populates="records")
 
+    __table_args__=(UniqueConstraint("lesson_id","date","time",name="uq_lesson_date_time"),)
 
 async def async_main():
-
-    async with engine.begin() as curs:
-        await curs.run_sync(Base.metadata.create_all)
-
-
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
